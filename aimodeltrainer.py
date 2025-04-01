@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import seaborn as sns
@@ -20,24 +19,22 @@ import io
 import joblib
 import traceback
 from itertools import cycle
-from datetime import datetime # Needed for history timestamp
+from datetime import datetime
 
-# --- Page Configuration ---
 st.set_page_config(layout="wide", page_title="ML Model Trainer")
 st.title("🤖 Interactive Machine Learning Model Trainer")
 st.write("Configure and run ML models. Results are stored in the sidebar history for this session.")
 
-# --- Initialize Session State ---
+#Used to initilizate the session state for each user.
 default_session_state = {
     "model_bytes": None, "label_classes": None, "last_model_type": None,
     "prev_data_source": None, "prev_uploaded_file_id": None,
-    "training_history": [] # List to store history of runs
+    "training_history": [] #list to store the different AI models trained
 }
 for key, default_value in default_session_state.items():
     if key not in st.session_state: st.session_state[key] = default_value
 
-# --- Helper Functions ---
-# (load_data, get_column_types - unchanged)
+#Helper Functions
 @st.cache_data
 def load_data(source, uploaded_file_content=None, filename=None):
     try:
@@ -57,8 +54,7 @@ def get_column_types(df):
     datetime_cols = [str(col) for col in datetime_cols]
     return quantitative_cols, qualitative_cols, datetime_cols
 
-# --- Plotting Functions ---
-# (Plotting functions remain the same)
+#Plotting functions
 def plot_confusion_matrix(y_true, y_pred, classes):
     try:
         unique_labels_in_data = np.unique(np.concatenate((y_true, y_pred))); labels_for_cm = np.arange(len(classes)) if np.max(unique_labels_in_data) < len(classes) else np.unique(y_true)
@@ -79,7 +75,7 @@ def plot_roc_curve(y_true, y_pred_proba, classes):
             elif y_pred_proba.shape[1] >= 2: fpr, tpr, _ = roc_curve(y_true_binary[:, pos_label_idx], y_pred_proba[:, pos_label_idx]); roc_auc = auc(fpr, tpr); pos_class_name = classes[pos_label_idx] if pos_label_idx < len(classes) else f"Class {pos_label_idx}"; label_text = f'ROC of {pos_class_name} (area = {roc_auc:0.2f})'
             else: st.error("Inconsistent probability shape."); return None
             ax.plot(fpr, tpr, color='darkorange', lw=2, label=label_text); ax.set_title('ROC Curve')
-    else: # Multiclass: Micro-Average Only
+    else:
         try:
             y_true_bin = label_binarize(y_true, classes=np.arange(n_classes)); fpr, tpr, _ = roc_curve(y_true_bin.ravel(), y_pred_proba.ravel()); roc_auc = auc(fpr, tpr)
             ax.plot(fpr, tpr, label=f'Micro-average ROC (area = {roc_auc:0.2f})', color='deeppink', linestyle=':', linewidth=4); ax.set_title('Micro-Average ROC')
@@ -107,7 +103,7 @@ def plot_feature_importance(model, feature_names, model_type):
         ax.set_title('Feature Importance'); ax.set_xlabel('Importance Score' if hasattr(model, 'feature_importances_') else 'Absolute Coefficient'); plt.tight_layout(); return fig
     except Exception as e: st.warning(f"FI plot error: {e}"); return None
 
-# --- Sidebar ---
+#Sidebar configurations
 st.sidebar.header("1. Data Source")
 available_datasets = ['iris', 'penguins', 'tips']
 data_source_options = ['Upload'] + available_datasets
@@ -117,15 +113,14 @@ if selected_source == 'Upload':
     uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"], key="file_uploader")
     if uploaded_file: uploaded_file_content = uploaded_file.getvalue(); uploaded_file_id = f"{uploaded_file.name}-{uploaded_file.size}-{uploaded_file.type}"
 
-# --- History Display in Sidebar ---
+#History diplayed in the sidebar
 st.sidebar.header("📜 Training History")
 if st.session_state.training_history:
-    # Button to clear history
+    #Clear history button
     if st.sidebar.button("Clear Run History"):
         st.session_state.training_history = []
-        st.rerun() # Rerun to update the sidebar display
+        st.rerun()
 
-    # Display runs in reverse order (most recent first)
     for i, run in enumerate(reversed(st.session_state.training_history)):
         run_index = len(st.session_state.training_history) - 1 - i
         timestamp = run.get('timestamp', 'N/A')
@@ -138,12 +133,11 @@ if st.session_state.training_history:
 
         with st.sidebar.expander(expander_title):
             st.markdown("**Configuration:**")
-            st.json(run['config'], expanded=False) # Show config collapsed by default
+            st.json(run['config'], expanded=False)
             st.markdown("**Results:**")
-            # Display metrics neatly
+            #Display the metrics
             if run.get('results'):
-                for metric, value in run['results'].items():
-                    # Try to format as number, otherwise string
+                for metric, value in run['results'].items()
                     try:
                         st.metric(label=metric.replace('_', ' ').title(), value=f"{value:.4f}")
                     except (TypeError, ValueError):
@@ -152,11 +146,11 @@ if st.session_state.training_history:
                 st.caption("No results recorded.")
 else:
     st.sidebar.caption("No training runs recorded yet.")
-st.sidebar.markdown("---") # Separator
+st.sidebar.markdown("---")
 
-# --- Load Data ---
+#Loading the Data
 df = None; error_message = None
-# Reset model state if data changes (removed cv_results)
+#Reset the model if the data changes
 if st.session_state.prev_data_source != selected_source or st.session_state.prev_uploaded_file_id != uploaded_file_id:
     st.session_state.model_bytes = None; st.session_state.last_model_type = None; st.session_state.label_classes = None;
     st.session_state.prev_data_source = selected_source; st.session_state.prev_uploaded_file_id = uploaded_file_id
@@ -165,7 +159,7 @@ if selected_source == 'Upload':
     elif not st.session_state.prev_uploaded_file_id: st.info("Awaiting CSV file upload...")
 elif selected_source: df, error_message = load_data(selected_source)
 
-# --- Main Area ---
+#Main Area
 if error_message: st.error(error_message)
 
 if df is not None:
@@ -179,7 +173,7 @@ if df is not None:
         else: st.write("No categorical, object, or boolean columns found.")
 
     st.header("⚙️ Configuration")
-    # --- Configuration Form ---
+    #Configuration Form (to adjust and personalize parameters of the AI Model)
     with st.form("ml_config_form"):
         st.subheader("2. Feature Selection")
         quantitative_cols, qualitative_cols, datetime_cols = get_column_types(df); all_potential_columns = [str(c) for c in df.columns]
@@ -217,32 +211,29 @@ if df is not None:
         else: model_options = ["Linear Regression", "Random Forest Regressor", "Random Forest Classifier"]
         selected_model_type = st.selectbox("Select Model", model_options, key="model_selector")
 
-        # --- Training Options (No CV) ---
+        #Training options (test/train split)
         test_size = st.slider("Test Set Size (%)", 10, 50, 25, 5, key="test_size_slider") / 100.0
         random_state = st.number_input("Random State", value=42, step=1, key="random_state_input")
 
-        # --- Hyperparameters ---
+        #Hyperparameters the model needs to get defined beforehand
         st.markdown("**Model Hyperparameters:**")
-        model_params_config = {} # Use a different name for capturing config
+        model_params_config = {} 
         if selected_model_type == "Linear Regression": model_params_config['fit_intercept'] = st.checkbox("Fit Intercept", True, key="lr_fit_intercept")
         elif selected_model_type in ["Random Forest Regressor", "Random Forest Classifier"]:
              model_params_config['n_estimators'] = st.slider("Num Trees (n_estimators)", 10, 500, 100, 10, key="rf_n_estimators")
              max_depth_val = st.slider("Max Depth (max_depth, 0=None)", 0, 50, 10, 1, key="rf_max_depth");
-             # Store the value used (None or int) not just the slider value
              model_params_config['max_depth'] = None if max_depth_val == 0 else max_depth_val
              model_params_config['min_samples_split'] = st.slider("Min Samples Split", 2, 20, 2, 1, key="rf_min_samples_split")
              model_params_config['min_samples_leaf'] = st.slider("Min Samples Leaf", 1, 20, 1, 1, key="rf_min_samples_leaf")
              if task_type == "Classification" and selected_model_type == "Random Forest Classifier": model_params_config['criterion'] = st.selectbox("Criterion", ["gini", "entropy"], 0, key="rf_criterion")
 
         submitted = st.form_submit_button("🚀 Train & Evaluate")
-    # --- End of Form ---
+    #End of form
 
-    # --- Actions After Form Submission ---
+    #Action after submission
     if submitted:
-        # Reset only current run's downloadable model state
         st.session_state.model_bytes = None; st.session_state.last_model_type = None; st.session_state.label_classes = None;
 
-        # (Input Validation - same as before)
         if not quantitative_features_options and not qualitative_features_options: st.error("❌ No features available."); st.stop()
         if not selected_features: st.error("❌ Select features."); st.stop()
         if not target_variable: st.error("❌ Select target."); st.stop()
@@ -253,7 +244,7 @@ if df is not None:
 
         st.header("🚀 Training & Evaluation")
         try:
-            # --- Capture Configuration for History ---
+
             run_config = {
                 "dataset": selected_source if selected_source != 'Upload' else uploaded_file.name,
                 "target_variable": target_variable,
@@ -264,8 +255,7 @@ if df is not None:
                 "hyperparameters": model_params_config # Use the captured params
             }
 
-            # --- Prepare Data ---
-            # (Data prep - same as before)
+            #Data preparation
             df_train = df.dropna(subset=[target_variable]).copy();
             if df_train.shape[0] < df.shape[0]: st.warning(f"Dropped {df.shape[0] - df_train.shape[0]} rows with missing target.")
             if df_train.empty or df_train.shape[0] < 10: st.error("❌ Insufficient data after NA drop."); st.stop()
@@ -276,13 +266,13 @@ if df is not None:
             if not final_selected_features: st.error("❌ No selected features remain after NA drop."); st.stop()
             X = df_processed[final_selected_features]; y_original = df_processed[target_variable]
 
-            # --- Preprocessing ---
+            #Using pipeline for preprocessing
             numeric_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median'))]); categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')), ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))])
             preprocessor = ColumnTransformer(transformers=[('num', numeric_transformer, final_selected_quantitative), ('cat', categorical_transformer, final_selected_qualitative)], remainder='drop', verbose_feature_names_out=False); preprocessor.set_output(transform="pandas")
 
-            # --- Model Definition & Target Encoding ---
+            #Model definition and Target encoding
             le = None; y_to_use = y_original
-            # Use the captured config hyperparameters to define the model
+            #Use  captured configuration hyperparameters to be able to define the model
             model_params_to_use = run_config['hyperparameters']
             if task_type == "Classification":
                 le = LabelEncoder(); y_encoded = le.fit_transform(y_original); st.session_state['label_classes'] = le.classes_ ; y_to_use = y_encoded
@@ -292,17 +282,17 @@ if df is not None:
                 elif selected_model_type == "Random Forest Regressor": model = RandomForestRegressor(random_state=random_state, n_jobs=-1, **model_params_to_use)
             pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])
 
-            # --- Train/Test Split & Final Training ---
+            #the final split between training and testing datasets
             st.subheader("🎓 Model Training")
             try: X_train, X_test, y_train, y_test_final = train_test_split(X, y_to_use, test_size=test_size, random_state=random_state, stratify=y_to_use if task_type=="Classification" and len(np.unique(y_to_use)) > 1 else None)
             except ValueError as split_error: st.warning(f"Stratified split failed ({split_error}), using non-stratified split."); X_train, X_test, y_train, y_test_final = train_test_split(X, y_to_use, test_size=test_size, random_state=random_state)
             with st.spinner(f"Training {selected_model_type}..."): pipeline.fit(X_train, y_train)
             st.success(f"✅ Model training complete!")
 
-            # --- Evaluation on Test Set ---
+            #Evaluation on test set
             st.subheader("🧪 Test Set Evaluation")
             y_pred_test = pipeline.predict(X_test); y_pred_proba_test = None
-            run_results = {} # Initialize results dict
+            run_results = {} #dictionary created to store results
             if task_type == "Classification" and hasattr(pipeline, "predict_proba"):
                 try: y_pred_proba_test = pipeline.predict_proba(X_test)
                 except Exception as proba_e: st.warning(f"Could not get test set probabilities: {proba_e}")
@@ -315,7 +305,7 @@ if df is not None:
                  accuracy_test = accuracy_score(y_test_final, y_pred_test); precision_test, recall_test, f1_test, _ = precision_recall_fscore_support(y_test_final, y_pred_test, average='weighted', labels=np.unique(y_test_final), zero_division=0)
                  col1.metric("Test Accuracy", f"{accuracy_test:.4f}"); col2.metric("Test Weighted F1", f"{f1_test:.4f}"); st.markdown(f"**Test Precision (W):** {precision_test:.4f} | **Test Recall (W):** {recall_test:.4f}")
                  run_results = {"Accuracy": accuracy_test, "F1_Weighted": f1_test, "Precision_Weighted": precision_test, "Recall_Weighted": recall_test}
-                 # Add AUC score to results if available
+                 #Adding AUC if available to store results
                  if y_pred_proba_test is not None:
                       try:
                            n_classes_eval = len(st.session_state['label_classes'])
@@ -327,14 +317,13 @@ if df is not None:
                            st.warning(f"Could not calculate test ROC AUC: {auc_err}")
 
 
-            # --- Visualizations (on Test Set) ---
-            # (Plotting logic - same as before)
+            #Visualization of Test set
             st.subheader("📊 Test Set Visualizations")
             plot_col1, plot_col2 = st.columns(2); fig_res_cm = None
             if task_type == "Regression": fig_res_cm = plot_residuals(y_test_final, y_pred_test)
             elif task_type == "Classification": classes_cm = st.session_state.get('label_classes', np.unique(y_original)); fig_res_cm = plot_confusion_matrix(y_test_final, y_pred_test, classes_cm)
             if fig_res_cm: plot_col1.pyplot(fig_res_cm, clear_figure=True); plot_col1.caption("Residuals / CM (Test Set)")
-            try: # Feature Importance Plot
+            try: #The plot of feature importance
                  final_preprocessor = pipeline.named_steps['preprocessor']; num_features = final_selected_quantitative; ohe_features = []
                  cat_transformer_info = next((t for t in final_preprocessor.transformers_ if t[0] == 'cat'), None)
                  if cat_transformer_info:
@@ -352,12 +341,12 @@ if df is not None:
                  else: plot_col2.info("Feature importance not available.")
             except Exception as fi_e: st.warning(f"Could not generate FI plot: {fi_e}")
 
-            if task_type == "Classification": # ROC Curve Plot
+            if task_type == "Classification": #ROC Curve plot 
                  classes_roc = st.session_state.get('label_classes', np.unique(y_original))
                  fig_roc = plot_roc_curve(y_test_final, y_pred_proba_test, classes_roc)
                  if fig_roc: st.pyplot(fig_roc, clear_figure=True); st.caption("ROC Curve (Test Set)")
 
-            # --- Prepare Final Model for Download ---
+            #Prepare final model to download (I'm using plk, but joblib could also be used, although its heavier)
             st.subheader("💾 Prepare Final Model for Download")
             try:
                 model_bytes_io = io.BytesIO(); joblib.dump(pipeline, model_bytes_io); model_bytes_io.seek(0)
@@ -365,7 +354,7 @@ if df is not None:
                 st.info("Final model ready. Download button appears below.")
             except Exception as dump_error: st.error(f"❌ Error preparing model download: {dump_error}"); st.session_state.model_bytes = None
 
-            # --- Add Run to History (on Success) ---
+            #Add run to history
             run_entry = {
                 "timestamp": datetime.now(),
                 "config": run_config,
@@ -373,29 +362,25 @@ if df is not None:
             }
             st.session_state.training_history.append(run_entry)
             st.success("Run details saved to history in the sidebar.")
-            # Optional: Force sidebar update immediately if needed, though usually not necessary
-            # st.experimental_rerun()
 
-        # --- Catch All Errors during Training/Eval ---
+        #Catch all erros during training
         except Exception as e:
             st.error(f"❌ An error occurred during processing: {e}"); st.error("Traceback:"); st.code(traceback.format_exc())
-            st.session_state.model_bytes = None; st.session_state.last_model_type = None; # Clear any potential partial results
-
-# --- Display Download Button ---
-# (Unchanged)
+            st.session_state.model_bytes = None; st.session_state.last_model_type = None;
+            
+#Display the button of "Download"
 if st.session_state.get('model_bytes') is not None:
     st.divider(); st.header("💾 Download Trained Model")
     st.download_button(label=f"Download {st.session_state.last_model_type} Pipeline (.pkl)", data=st.session_state.model_bytes, file_name=f"{st.session_state.last_model_type.replace(' ', '_').lower()}_pipeline.pkl", mime="application/octet-stream", key="download_model_button")
-    if st.button("Clear Current Results & Model", key="clear_results_button"): # Renamed button slightly
+    if st.button("Clear Current Results & Model", key="clear_results_button"):
         st.session_state.model_bytes = None; st.session_state.label_classes = None; st.session_state.last_model_type = None;
-        st.rerun() # Rerun to clear display
+        st.rerun()
 
-# --- Handle case where dataset is not loaded ---
+#Handle the cases where the dataset is not loaded
 elif df is None and not error_message:
     st.info("⬅️ Select or upload data using the sidebar.")
-    # Clear downloadable model state if no data is loaded
     st.session_state.model_bytes = None; st.session_state.last_model_type = None; st.session_state.label_classes = None;
 
-# --- Footer ---
+#Footer of the streamlit application
 st.sidebar.markdown("---")
 st.sidebar.info("AI Model Trainer - Assignment (by: Víctor Pérez)")
