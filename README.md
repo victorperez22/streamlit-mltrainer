@@ -1,24 +1,24 @@
-Interactive Machine Learning Model Trainer
+**README File to explain the functioning of the AI Model Trainer:**
 
-This Streamlit application allows users to interactively train and evaluate basic machine learning models (Regression and Classification) on sample datasets or their own uploaded data.
+Although I provided the code, the application is fully functional and deployed in the Streamlit Community Cloud, if you prefer you can use the application using this link: https://app-mltrainer-victorperez.streamlit.app/
 
-This project was created as part of the Data Visualization assignment.
+Interactive Machine Learning Model Trainer: This application allows users to interactively train and evaluate basic machine learning models (both Regression and Classification) on sample datasets or their own uploaded data.
 
-Data Source Selection:
+Data Source Selection (you can choose from 2 options):
 - Choose from sample Seaborn datasets (Iris, Penguins, Tips).
 - Upload your own data in CSV format.
 
 Interactive Configuration:
-- Select the target variable (y).
+- Select the target variable (y)
 - Choose features (X) from available quantitative and qualitative columns.
-- Select the machine learning model (Linear Regression, Random Forest Regressor/Classifier based on task type).
+- Select the machine learning model (Linear Regression, Random Forest Regressor/Classifier based on task type)
 - Configure training parameters (Test Set Size, Random State).
-- Adjust model-specific hyperparameters (for example: `n_estimators`, `max_depth` for Random Forest).
+- Adjust hyperparameters for each model (for example: select the `n_estimators`, `max_depth` for Random Forest).
 
-Controlled Execution: 
+Controlled Execution:
 - Model training and evaluation only occur when the "Train & Evaluate" button is pressed, thanks to the use of `st.form`.
 
-Performance Evaluation:**
+Performance Evaluation:
 - Displays key metrics based on the task (RMSE/R² for Regression, Accuracy/F1/Precision/Recall/AUC for Classification).
 
 Visualizations:
@@ -51,5 +51,3 @@ Technologies used (these are the libraries used in the project)
 - Matplotlib
 - Joblib
 - Numpy
-
-The application is fully functional and deployed in the Streamlit Community Cloud
