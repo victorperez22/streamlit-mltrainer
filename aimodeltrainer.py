@@ -137,7 +137,7 @@ if st.session_state.training_history:
             st.markdown("**Results:**")
             #Display the metrics
             if run.get('results'):
-                for metric, value in run['results'].items()
+                for metric, value in run['results'].items():
                     try:
                         st.metric(label=metric.replace('_', ' ').title(), value=f"{value:.4f}")
                     except (TypeError, ValueError):
