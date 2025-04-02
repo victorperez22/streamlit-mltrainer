@@ -27,6 +27,8 @@ Visualizations:
 - Session History: Tracks configuration and results of successful runs within the current browser session in the sidebar.
 - Model Download: Allows downloading the trained pipeline (including preprocessor and model) as a `.pkl` file using `joblib`.
 
+IMPORTANT: I chose the Micro-Average ROC Curve because it gives a single, combined measure of the performance across all classes. This measure treats every sample the same, regardless of its class, which makes it very useful when you want a global summary of how well the model distinguishes between any correct class and any incorrect class.
+
 How to Use the Deployed App
 
 1.  Select Data: Use the sidebar to choose a sample dataset or upload your own CSV file.
