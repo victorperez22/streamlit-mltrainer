@@ -1,3 +1,4 @@
+#These are all of the libraries used, they are all included in the requirements.txt file for the deployed application to work
 import streamlit as st
 import pandas as pd
 import seaborn as sns
@@ -228,7 +229,7 @@ if df is not None:
              model_params_config['min_samples_leaf'] = st.slider("Min Samples Leaf", 1, 20, 1, 1, key="rf_min_samples_leaf")
              if task_type == "Classification" and selected_model_type == "Random Forest Classifier": model_params_config['criterion'] = st.selectbox("Criterion", ["gini", "entropy"], 0, key="rf_criterion")
 
-        submitted = st.form_submit_button("🚀 Train & Evaluate")
+        submitted = st.form_submit_button("🛠️ Train & Evaluate")
     #End of form
 
     #Action after submission
@@ -243,7 +244,7 @@ if df is not None:
         if task_type == "Regression" and "Classifier" in selected_model_type: st.error(f"❌ Invalid: {selected_model_type} for Regression."); st.stop()
         if task_type == "Classification" and "Regressor" in selected_model_type: st.error(f"❌ Invalid: {selected_model_type} for Classification."); st.stop()
 
-        st.header("🚀 Training & Evaluation")
+        st.header("🛠️ Training & Evaluation")
         try:
 
             run_config = {
