@@ -81,6 +81,7 @@ def plot_roc_curve(y_true, y_pred_proba, classes):
             ax.plot(fpr, tpr, label=f'Micro-average ROC (area = {roc_auc:0.2f})', color='deeppink', linestyle=':', linewidth=4); ax.set_title('Micro-Average ROC')
         except Exception as mc_roc_e: st.warning(f"Micro-ROC plot error: {mc_roc_e}"); ax.text(0.5, 0.5, 'ROC plot error', ha='center', va='center', transform=ax.transAxes)
     ax.plot([0, 1], [0, 1], color='grey', lw=1.5, linestyle='--'); ax.set_xlim([0.0, 1.0]); ax.set_ylim([0.0, 1.05]); ax.set_xlabel('False Positive Rate'); ax.set_ylabel('True Positive Rate'); ax.legend(loc="lower right", fontsize='small'); plt.tight_layout(); return fig
+# I chose the micro-average ROC curve because it provides a single combined measure of performance across all classes, which is better for the main objective of this assignment.
 
 def plot_residuals(y_true, y_pred):
     try:
